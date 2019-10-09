@@ -10,7 +10,7 @@
  			var customerSearch = search.create({
  				type:search.Type.CUSTOMER,
  				title:'Find duplicate customer',
- 				columns:['internalid','entityid','email'],
+ 				columns:['internalid','entityid','email','category','pricelevel'],
  				filters:[['email','is',email]]
  			});
 
@@ -33,7 +33,15 @@
 	            		name:'email'
 	            	});
 
-	            	var data = internalid + ' ' + entityid + ' ' + email;
+	            	var category = results[i].getValue({
+	            		name:'category'
+	            	});
+
+	            	var pricelevel = results[i].getValue({
+	            		name:'pricelevel'
+	            	});
+
+	            	var data = internalid + '|' + entityid + '|' + email + '|'+ category + '|' + pricelevel;
 
 	            	log.debug ({
 		                title: 'Data',
@@ -91,22 +99,31 @@
  		}
 
  		function createRecord(context){
- 			var rec = record.create({
-            	type:context.recordtype
-            });
+ 			try{
+ 				var rec = record.create({
+	            	type:context.recordtype
+	            });
 
-			for (var fldName in context) {
-				if(context.hasOwnProperty(fldName)){
-					if(fldName !== 'recordtype' && fldName !== 'items'){
-						rec.setValue(fldName,context[fldName]);
-					}
-					else if(fldName === 'items'){
-						createItem(context[fldName],rec,'item');
+				for (var fldName in context) {
+					if(context.hasOwnProperty(fldName)){
+						if(fldName !== 'recordtype' && fldName !== 'items'){
+							rec.setValue(fldName,context[fldName]);
+						}
+						else if(fldName === 'items'){
+							createItem(context[fldName],rec,'item');
+						}
 					}
 				}
-			}
-			var recordId = rec.save();
-            return String(recordId);
+				var recordId = rec.save();
+	            return String(recordId);
+ 			}
+ 			catch(err){
+ 				log.error({
+					title:err.name + ' error creating',
+					details:err.message
+				});
+ 			}
+ 			
  		}
 
  		function createSO(context) {
@@ -128,13 +145,13 @@
 	            }
 
 	            else{
-	            	customerId = createCustomer(context);
-	            	//return 'done'
+	            	customerId = createRecord(context.customer);
+	            	return customerId;
 	            }
 	            
-				var recordId = createRecord(context.order);
-	            return String(recordId);
-	            
+				//var recordId = createRecord(context.order);
+	            //return String(recordId);
+	            return 'end of script';
  			}
  			catch(err){
  				log.error({
