@@ -6,11 +6,11 @@
  define(['N/record','N/search'],function(record,search){
  		//find customer by email then return netsuite id
  		function checkForCustomer(email){
-            
+            var columns = ['internalid','entityid','email','category','pricelevel'];
  			var customerSearch = search.create({
  				type:search.Type.CUSTOMER,
  				title:'Find duplicate customer',
- 				columns:['internalid','entityid','email','category','pricelevel'],
+ 				columns:columns,
  				filters:[['email','is',email]]
  			});
 
@@ -19,29 +19,47 @@
                 title: 'Finding customer',
                 details: results.length
             });
+            var internalid = searchResults(results,columns);
+
+	 		return internalid;
+ 		}
+
+ 		function getItemId(context){
+
+ 		}
+
+ 		function getTax(province){
+ 			var columns = ['itemid','internalid','state'];
+ 			var taxSearch = search.create({
+ 				type:search.Type.TAX_GROUP,
+ 				title:'Find tax group',
+ 				columns:columns,
+ 				filters:[['description','contains',province]]
+ 			});
+
+ 			var results = taxSearch.run().getRange({start: 0, end: 1000});
+ 			log.debug ({
+                title: 'Finding tax results',
+                details: results.length
+            });
+ 		}
+
+ 		function searchResults(results,columns){
  			if(results.length === 1){
+ 				var data = '';
+ 				var internalid;
  				for (var i = 0; i < results.length; i++) {
-	            	var internalid = results[i].getValue({
-	            		name:'internalid'
-	            	});
+ 					for (var k = 0; k < columns.length; k++) {
+ 						var columnData = results[i].getValue({
+		            		name:columns[k]
+		            	});
 
-	            	var entityid = results[i].getValue({
-	            		name:'entityid'
-	            	});
+		            	data = data + columnData + '|';
 
-	            	var email = results[i].getValue({
-	            		name:'email'
-	            	});
-
-	            	var category = results[i].getValue({
-	            		name:'category'
-	            	});
-
-	            	var pricelevel = results[i].getValue({
-	            		name:'pricelevel'
-	            	});
-
-	            	var data = internalid + '|' + entityid + '|' + email + '|'+ category + '|' + pricelevel;
+		            	if(columns[k] === 'internalid'){
+ 							internalid = columnData
+ 						}
+ 					}
 
 	            	log.debug ({
 		                title: 'Data',
@@ -56,29 +74,6 @@
 	 		else{
 	 			return false;
 	 		}
- 		}
-
- 		function getItemId(context){
-
- 		}
-
- 		function getTax(province){
- 			var taxSearch = search.create({
- 				type:search.Type.TAX_GROUP,
- 				title:'Find tax group',
- 				columns:['itemid','internalid','state'],
- 				filters:[['description','contains',province]]
- 			});
-
- 			var results = taxSearch.run().getRange({start: 0, end: 1000});
- 			log.debug ({
-                title: 'Finding tax results',
-                details: results.length
-            });
- 		}
-
- 		function buildAddressString(addressData){
-
  		}
  		//create sublist item
  		function createItem(itemData,rec,subId){
@@ -140,13 +135,13 @@
 	                title: 'Create data',
 	                details: context
 	            });
- 				getTax("Alberta");
+ 				getTax(context.order.extraData.taxProvince);
  				if(customerId){
 	            	context.order.entity = customerId;
 	            }
 
 	            else{
-	            	//customerId = createRecord(context.customer);
+	            	customerId = createRecord(context.customer);
 	            	context.order.entity = customerId;
 	            	//return customerId;
 	            }
