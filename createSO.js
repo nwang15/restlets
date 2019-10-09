@@ -56,9 +56,13 @@
             	type:'customer'
             });
 
-            custRec.setValue('entityid',context.entityid);
-            custRec.setValue('email',context.email);
-            custRec.setValue('shipaddr1',context.shipaddress);
+            for (var fldName in context) {
+				if(context.hasOwnProperty(fldName)){
+					if(fldName !== 'recordtype'){
+						rec.setValue(fldName,context[fldName]);
+					}
+				}
+			}
  		}
 
  		function getItemId(context){
@@ -86,6 +90,25 @@
  			}
  		}
 
+ 		function createRecord(context){
+ 			var rec = record.create({
+            	type:context.recordtype
+            });
+
+			for (var fldName in context) {
+				if(context.hasOwnProperty(fldName)){
+					if(fldName !== 'recordtype' && fldName !== 'items'){
+						rec.setValue(fldName,context[fldName]);
+					}
+					else if(fldName === 'items'){
+						createItem(context[fldName],rec,'item');
+					}
+				}
+			}
+			var recordId = rec.save();
+            return String(recordId);
+ 		}
+
  		function createSO(context) {
  			log.debug ({
                 title: 'create SO start',
@@ -108,25 +131,9 @@
 	            	customerId = createCustomer(context);
 	            	//return 'done'
 	            }
-
-	            var rec = record.create({
-	            	type:context.order.recordtype
-	            });
-
-				for (var fldName in context.order) {
-					if(context.order.hasOwnProperty(fldName)){
-						if(fldName !== 'recordtype' && fldName !== 'items'){
-							rec.setValue(fldName,context.order[fldName]);
-						}
-						else if(fldName === 'items'){
-							createItem(context.order[fldName],rec,'item');
-						}
-					}
-				}
-				var recordId = rec.save();
-	            return String(recordId);
 	            
-	            //return 'done';
+				var recordId = createRecord(context.order);
+	            return String(recordId);
 	            
  			}
  			catch(err){
