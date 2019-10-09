@@ -5,13 +5,13 @@
 
  define(['N/record','N/search'],function(record,search){
  		//find customer by email then return netsuite id
- 		function checkForCustomer(context){
+ 		function checkForCustomer(email){
             
  			var customerSearch = search.create({
  				type:search.Type.CUSTOMER,
  				title:'Find duplicate customer',
  				columns:['internalid','entityid','email'],
- 				filters:[['email','is',context.email]]
+ 				filters:[['email','is',email]]
  			});
 
  			var results = customerSearch.run().getRange({start: 0, end: 1000});
@@ -52,7 +52,13 @@
             
 
  		function createCustomer(context){
+ 			var custRec = record.create({
+            	type:'customer'
+            });
 
+            custRec.setValue('entityid',context.entityid);
+            custRec.setValue('email',context.email);
+            custRec.setValue('shipaddr1',context.shipaddress);
  		}
 
  		function getItemId(context){
@@ -87,7 +93,7 @@
             });
  			try{
 
- 				var customerId = checkForCustomer(context);
+ 				var customerId = checkForCustomer(context.order.email);
  				
  				log.debug ({
 	                title: 'Create data',
@@ -95,22 +101,25 @@
 	            });
 
  				if(customerId){
-	            	context.entity = customerId;
+	            	context.order.entity = customerId;
+	            }
+
+	            else{
+	            	customerId = createCustomer(context);
+	            	//return 'done'
 	            }
 
 	            var rec = record.create({
-	            	type:context.recordtype
+	            	type:context.order.recordtype
 	            });
 
-
- 				
-				for (var fldName in context) {
-					if(context.hasOwnProperty(fldName)){
+				for (var fldName in context.order) {
+					if(context.order.hasOwnProperty(fldName)){
 						if(fldName !== 'recordtype' && fldName !== 'items'){
-							rec.setValue(fldName,context[fldName]);
+							rec.setValue(fldName,context.order[fldName]);
 						}
 						else if(fldName === 'items'){
-							createItem(context[fldName],rec,'item');
+							createItem(context.order[fldName],rec,'item');
 						}
 					}
 				}
