@@ -57,32 +57,32 @@
 	 			return false;
 	 		}
  		}
-            
-
- 		function createCustomer(context){
- 			var custRec = record.create({
-            	type:'customer'
-            });
-
-            for (var fldName in context) {
-				if(context.hasOwnProperty(fldName)){
-					if(fldName !== 'recordtype'){
-						rec.setValue(fldName,context[fldName]);
-					}
-				}
-			}
- 		}
 
  		function getItemId(context){
 
  		}
 
+ 		function getTax(province){
+ 			var taxSearch = search.create({
+ 				type:search.Type.TAX_GROUP,
+ 				title:'Find tax group',
+ 				columns:['itemid','internalid','state'],
+ 				filters:[['description','contains',province]]
+ 			});
+
+ 			var results = taxSearch.run().getRange({start: 0, end: 1000});
+ 			log.debug ({
+                title: 'Finding tax results',
+                details: results.length
+            });
+ 		}
+
  		function buildAddressString(addressData){
 
  		}
-
+ 		//create sublist item
  		function createItem(itemData,rec,subId){
- 			//dynamically create line?
+ 			var lineCount = 0;
  			for (var i = 0; i < itemData.length; i++) {
  				var singleItemData = itemData[i];
  				for (var itemField in singleItemData) {
@@ -90,11 +90,12 @@
 						rec.setSublistValue({
 							sublistId:subId,
 							fieldId:itemField,
-							line:0,
+							line:lineCount,
 							value:singleItemData[itemField]
 						});
 					}
 				}
+				lineCount++;
  			}
  		}
 
@@ -106,7 +107,7 @@
 
 				for (var fldName in context) {
 					if(context.hasOwnProperty(fldName)){
-						if(fldName !== 'recordtype' && fldName !== 'items'){
+						if(fldName !== 'recordtype' && fldName !== 'items' && fldName !== 'extraData'){
 							rec.setValue(fldName,context[fldName]);
 						}
 						else if(fldName === 'items'){
@@ -119,7 +120,7 @@
  			}
  			catch(err){
  				log.error({
-					title:err.name + ' error creating',
+					title:err.name + ' error creating ' + context.recordtype,
 					details:err.message
 				});
  			}
@@ -139,19 +140,21 @@
 	                title: 'Create data',
 	                details: context
 	            });
-
+ 				getTax("Alberta");
  				if(customerId){
 	            	context.order.entity = customerId;
 	            }
 
 	            else{
-	            	customerId = createRecord(context.customer);
-	            	return customerId;
+	            	//customerId = createRecord(context.customer);
+	            	context.order.entity = customerId;
+	            	//return customerId;
 	            }
 	            
 				//var recordId = createRecord(context.order);
 	            //return String(recordId);
-	            return 'end of script';
+	            var returnString = 'Customer Id: ' + customerId + ' recordId: ' + recordId;
+	            return returnString;
  			}
  			catch(err){
  				log.error({
