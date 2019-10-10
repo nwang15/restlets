@@ -5,13 +5,13 @@
 
  define(['N/record','N/search'],function(record,search){
  		//find customer by email then return netsuite id
- 		function checkForCustomer(email){
+ 		function checkForCustomer(context){
             var columns = ['internalid','entityid','email','category','pricelevel','isperson'];
  			var customerSearch = search.create({
  				type:search.Type.CUSTOMER,
  				title:'Find duplicate customer',
  				columns:columns,
- 				filters:[['email','is',email]]
+ 				filters:[['email','is',context.email]]
  			});
 
  			var results = customerSearch.run().getRange({start: 0, end: 1000});
@@ -24,6 +24,9 @@
                 title: 'customer id',
                 details: internalid
             });
+
+            findAddressInCustomer(internalid,context.addressbook)
+
 	 		return internalid;
  		}
 
@@ -31,15 +34,15 @@
 
  		}
  		//check if address exists in customer if not add it
- 		function findAddressInCustomer(context){
- 			var columns = ['internalid','entityid','address','country']
+ 		function findAddressInCustomer(internalid,addressData){
+ 			var columns = ['internalid','entityid','address1','email']
  			var customerSearchObj = search.create({
 			   type: "customer",
 			   filters:
 			   [
-			      ["address.address1","contains","4825 49th Ave"], 
+			      ["address.address1","contains",addressData.addr1], 
 			      "AND", 
-			      ["email","contains","WebDev@ctoms.ca"]
+			      ["internalid","is",internalid]
 			   ],
 			   columns:
 			   [
@@ -48,84 +51,38 @@
 			         sort: search.Sort.ASC
 			      }),
 			      "email",
-			      "address",
-			      search.createColumn({
-			         name: "address",
-			         join: "Address"
-			      }),
 			      search.createColumn({
 			         name: "address1",
 			         join: "Address"
 			      }),
-			      search.createColumn({
-			         name: "address3",
-			         join: "Address"
-			      }),
-			      search.createColumn({
-			         name: "addressinternalid",
-			         join: "Address"
-			      }),
-			      search.createColumn({
-			         name: "addresslabel",
-			         join: "Address"
-			      }),
-			      search.createColumn({
-			         name: "addressphone",
-			         join: "Address"
-			      }),
-			      search.createColumn({
-			         name: "addressee",
-			         join: "Address"
-			      }),
-			      search.createColumn({
-			         name: "attention",
-			         join: "Address"
-			      }),
-			      search.createColumn({
-			         name: "city",
-			         join: "Address"
-			      }),
-			      search.createColumn({
-			         name: "country",
-			         join: "Address"
-			      }),
-			      search.createColumn({
-			         name: "countrycode",
-			         join: "Address"
-			      }),
-			      search.createColumn({
-			         name: "isdefaultbilling",
-			         join: "Address"
-			      }),
-			      search.createColumn({
-			         name: "isdefaultshipping",
-			         join: "Address"
-			      }),
-			      search.createColumn({
-			         name: "internalid",
-			         join: "Address"
-			      }),
-			      search.createColumn({
-			         name: "state",
-			         join: "Address"
-			      }),
-			      search.createColumn({
-			         name: "statedisplayname",
-			         join: "Address"
-			      }),
-			      search.createColumn({
-			         name: "zipcode",
-			         join: "Address"
-			      })
+			      "internalid"
 			   ]
 			});
  			var results = customerSearchObj.run().getRange({start: 0, end: 1000});
-			var internalid = searchResults(results,columns);
-            log.debug ({
-                title: 'customer address id',
-                details: internalid
-            });
-	 		return internalid;
+ 			var resultLength = results.length;
+ 			if(resultLength > 0){
+ 				log.debug ({
+	                title: 'Address Exists',
+	                details: 'No address created'
+	            });
+ 				return;
+ 			}
+ 			else{
+
+ 				log.debug ({
+	                title: 'Creating address',
+	                details: addressData
+	            });
+ 				var rec = record.load({
+				    type: 'customer', 
+				    id: internalid,
+				    isDynamic: true,
+				});
+
+ 				createAddress(addressData,rec);
+
+				rec.save();
+ 			}
 
  		}
 
@@ -295,13 +252,12 @@
             });
  			try{
 
- 				var customerId = checkForCustomer(context.order.email);
+ 				var customerId = checkForCustomer(context.customer);
  				
  				log.debug ({
 	                title: 'Create data',
 	                details: context
 	            });
-	            findAddressInCustomer(context.customer);
  				getTax(context.order.extraData.taxProvince);
  				if(customerId){
  					log.debug ({
