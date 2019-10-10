@@ -24,8 +24,11 @@
                 title: 'customer id',
                 details: internalid
             });
-
-            findAddressInCustomer(internalid,context.addressbook)
+            
+            if(internalid){
+            	findAddressInCustomer(internalid,context.addressbook);
+            }
+            
 
 	 		return internalid;
  		}
@@ -73,6 +76,7 @@
 	                title: 'Creating address',
 	                details: addressData
 	            });
+
  				var rec = record.load({
 				    type: 'customer', 
 				    id: internalid,
@@ -144,12 +148,21 @@
  		function createItem(itemData,rec,subId){
  			try{
  				var lineCount = 0;
+ 				log.debug ({
+	                title: 'item data ',
+	                details: 'data: ' + JSON.stringify(itemData)
+	            });
 	 			for (var i = 0; i < itemData.length; i++) {
 	 				var singleItemData = itemData[i];
+	 				log.debug ({
+		                title: 'add item ',
+		                details: 'data: ' + JSON.stringify(singleItemData)
+		            });
 	 				for (var itemField in singleItemData) {
+	 					
 						if(singleItemData.hasOwnProperty(itemField)){
 							log.debug ({
-				                title: 'add sublist item ' + subId + itemField,
+				                title: 'add sublist ' + subId + itemField,
 				                details: 'data: ' + lineCount + singleItemData[itemField]
 				            });
 							rec.setSublistValue({
@@ -166,7 +179,7 @@
  			catch(err){
  				log.error({
 					title:err.name + ' error creating sublist ' + subId,
-					details:err.message
+					details:err
 				});
  			}
  			
@@ -225,7 +238,7 @@
 							rec.setValue(fldName,context[fldName]);
 						}
 						else if(fldName === 'items'){
-							createItem(context[fldName],rec,fldName);
+							createItem(context[fldName],rec,'item');
 						}
 						else if(fldName === 'addressbook'){
 							createAddress(context[fldName],rec);
@@ -274,10 +287,10 @@
 		            });
 	            	customerId = createRecord(context.customer,true);
 	            	context.order.entity = customerId;
-	            	return customerId;
+	            	//return customerId;
 	            }
 	            
-				//var recordId = createRecord(context.order);
+				var recordId = createRecord(context.order,false);
 	            var returnString = 'Customer Id: ' + customerId + ' recordId: ' + recordId;
 	            return returnString;
  			}
