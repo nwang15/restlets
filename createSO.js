@@ -20,7 +20,10 @@
                 details: results.length
             });
             var internalid = searchResults(results,columns);
-
+            log.debug ({
+                title: 'customer id',
+                details: internalid
+            });
 	 		return internalid;
  		}
 
@@ -42,32 +45,39 @@
                 title: 'Finding tax results',
                 details: results.length
             });
- 		}
 
+            var internalid = searchResults(results,columns);
+
+	 		return internalid;
+ 		}
+ 		//search for internalId in results use first result
  		function searchResults(results,columns){
- 			if(results.length === 1){
+ 			if(results.length  > 0){
+ 				
  				var data = '';
  				var internalid;
- 				for (var i = 0; i < results.length; i++) {
- 					for (var k = 0; k < columns.length; k++) {
- 						var columnData = results[i].getValue({
-		            		name:columns[k]
-		            	});
-
-		            	data = data + columnData + '|';
-
-		            	if(columns[k] === 'internalid'){
- 							internalid = columnData
- 						}
- 					}
-
-	            	log.debug ({
-		                title: 'Data',
-		                details: data
+				for (var k = 0; k < columns.length; k++) {
+					var columnData = results[0].getValue({
+	            		name:columns[k]
 	            	});
 
-	            	return internalid;
-	            }
+            		data = data + columnData + '|';
+       
+            	if(columns[k].name === 'internalid'){
+	            		log.debug({
+			                title: 'Found internalid',
+			                details: columnData
+			        	});
+						internalid = columnData;
+					}
+				}
+
+	        	log.debug({
+	                title: 'Data',
+	                details: data
+	        	});
+
+	        	return internalid;     
 
 	 		}
 
@@ -137,17 +147,24 @@
 	            });
  				getTax(context.order.extraData.taxProvince);
  				if(customerId){
+ 					log.debug ({
+		                title: 'Customer exists',
+		                details: customerId
+		            });
 	            	context.order.entity = customerId;
 	            }
 
 	            else{
+	            	log.debug ({
+		                title: 'Customer does not exist',
+		                details: customerId
+		            });
 	            	customerId = createRecord(context.customer);
 	            	context.order.entity = customerId;
 	            	//return customerId;
 	            }
 	            
-				//var recordId = createRecord(context.order);
-	            //return String(recordId);
+				var recordId = createRecord(context.order);
 	            var returnString = 'Customer Id: ' + customerId + ' recordId: ' + recordId;
 	            return returnString;
  			}
