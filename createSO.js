@@ -6,7 +6,7 @@
  define(['N/record','N/search'],function(record,search){
  		//find customer by email then return netsuite id
  		function checkForCustomer(email){
-            var columns = ['internalid','entityid','email','category','pricelevel'];
+            var columns = ['internalid','entityid','email','category','pricelevel','isperson'];
  			var customerSearch = search.create({
  				type:search.Type.CUSTOMER,
  				title:'Find duplicate customer',
@@ -30,9 +30,107 @@
  		function getItemId(context){
 
  		}
+ 		//check if address exists in customer if not add it
+ 		function findAddressInCustomer(context){
+ 			var columns = ['internalid','entityid','address','country']
+ 			var customerSearchObj = search.create({
+			   type: "customer",
+			   filters:
+			   [
+			      ["address.address1","contains","4825 49th Ave"], 
+			      "AND", 
+			      ["email","contains","WebDev@ctoms.ca"]
+			   ],
+			   columns:
+			   [
+			      search.createColumn({
+			         name: "entityid",
+			         sort: search.Sort.ASC
+			      }),
+			      "email",
+			      "address",
+			      search.createColumn({
+			         name: "address",
+			         join: "Address"
+			      }),
+			      search.createColumn({
+			         name: "address1",
+			         join: "Address"
+			      }),
+			      search.createColumn({
+			         name: "address3",
+			         join: "Address"
+			      }),
+			      search.createColumn({
+			         name: "addressinternalid",
+			         join: "Address"
+			      }),
+			      search.createColumn({
+			         name: "addresslabel",
+			         join: "Address"
+			      }),
+			      search.createColumn({
+			         name: "addressphone",
+			         join: "Address"
+			      }),
+			      search.createColumn({
+			         name: "addressee",
+			         join: "Address"
+			      }),
+			      search.createColumn({
+			         name: "attention",
+			         join: "Address"
+			      }),
+			      search.createColumn({
+			         name: "city",
+			         join: "Address"
+			      }),
+			      search.createColumn({
+			         name: "country",
+			         join: "Address"
+			      }),
+			      search.createColumn({
+			         name: "countrycode",
+			         join: "Address"
+			      }),
+			      search.createColumn({
+			         name: "isdefaultbilling",
+			         join: "Address"
+			      }),
+			      search.createColumn({
+			         name: "isdefaultshipping",
+			         join: "Address"
+			      }),
+			      search.createColumn({
+			         name: "internalid",
+			         join: "Address"
+			      }),
+			      search.createColumn({
+			         name: "state",
+			         join: "Address"
+			      }),
+			      search.createColumn({
+			         name: "statedisplayname",
+			         join: "Address"
+			      }),
+			      search.createColumn({
+			         name: "zipcode",
+			         join: "Address"
+			      })
+			   ]
+			});
+ 			var results = customerSearchObj.run().getRange({start: 0, end: 1000});
+			var internalid = searchResults(results,columns);
+            log.debug ({
+                title: 'customer address id',
+                details: internalid
+            });
+	 		return internalid;
+
+ 		}
 
  		function getTax(province){
- 			var columns = ['itemid','internalid','state'];
+ 			var columns = ['itemid','internalid','state','country'];
  			var taxSearch = search.create({
  				type:search.Type.TAX_GROUP,
  				title:'Find tax group',
@@ -85,39 +183,97 @@
 	 			return false;
 	 		}
  		}
- 		//create sublist item
+ 		
  		function createItem(itemData,rec,subId){
- 			var lineCount = 0;
- 			for (var i = 0; i < itemData.length; i++) {
- 				var singleItemData = itemData[i];
- 				for (var itemField in singleItemData) {
-					if(singleItemData.hasOwnProperty(itemField)){
-						rec.setSublistValue({
-							sublistId:subId,
-							fieldId:itemField,
-							line:lineCount,
-							value:singleItemData[itemField]
-						});
+ 			try{
+ 				var lineCount = 0;
+	 			for (var i = 0; i < itemData.length; i++) {
+	 				var singleItemData = itemData[i];
+	 				for (var itemField in singleItemData) {
+						if(singleItemData.hasOwnProperty(itemField)){
+							log.debug ({
+				                title: 'add sublist item ' + subId + itemField,
+				                details: 'data: ' + lineCount + singleItemData[itemField]
+				            });
+							rec.setSublistValue({
+								sublistId:subId,
+								fieldId:itemField,
+								line:lineCount,
+								value:singleItemData[itemField]
+							});
+						}
 					}
-				}
-				lineCount++;
+					lineCount++;
+	 			}
  			}
+ 			catch(err){
+ 				log.error({
+					title:err.name + ' error creating sublist ' + subId,
+					details:err.message
+				});
+ 			}
+ 			
+ 		}
+ 		//this function needs to exist to handle the dynamic mode for customer records
+ 		function createAddress(addressData,rec){
+ 			try{
+ 				rec.selectNewLine({
+		        	sublistId: 'addressbook'
+		        });
+		        var addressSubrecord = rec.getCurrentSublistSubrecord({
+			      sublistId: 'addressbook',
+			      fieldId: 'addressbookaddress'
+			    });
+		        
+		        for(var addressField in addressData){
+		        	addressSubrecord.setValue({
+				        fieldId: addressField,
+				        value: addressData[addressField]
+				    })
+		        }
+				
+				/*
+				addressSubrecord.setValue({
+			        fieldId: 'addr1',
+			        value: addressData.addr1
+			    });
+				*/
+			    rec.commitLine({
+			       sublistId: 'addressbook'
+			    });
+ 			}
+ 			catch(err){
+ 				log.error({
+					title:err.name + ' error creating address ',
+					details:err.message
+				});
+ 			}
+ 			
  		}
 
- 		function createRecord(context){
+ 		function createRecord(context,dynamic){
  			try{
+ 				if(dynamic === undefined){
+ 					dynamic = false;
+ 				}
  				var rec = record.create({
-	            	type:context.recordtype
+	            	type:context.recordtype,
+	            	isDynamic:dynamic
 	            });
 
 				for (var fldName in context) {
 					if(context.hasOwnProperty(fldName)){
-						if(fldName !== 'recordtype' && fldName !== 'items' && fldName !== 'extraData'){
+                      
+						if(fldName !== 'recordtype' && fldName !== 'items' && fldName !== 'extraData' && fldName !== 'addressbook'){
 							rec.setValue(fldName,context[fldName]);
 						}
 						else if(fldName === 'items'){
-							createItem(context[fldName],rec,'item');
+							createItem(context[fldName],rec,fldName);
 						}
+						else if(fldName === 'addressbook'){
+							createAddress(context[fldName],rec);
+						}
+
 					}
 				}
 				var recordId = rec.save();
@@ -145,6 +301,7 @@
 	                title: 'Create data',
 	                details: context
 	            });
+	            findAddressInCustomer(context.customer);
  				getTax(context.order.extraData.taxProvince);
  				if(customerId){
  					log.debug ({
@@ -159,12 +316,12 @@
 		                title: 'Customer does not exist',
 		                details: customerId
 		            });
-	            	customerId = createRecord(context.customer);
+	            	customerId = createRecord(context.customer,true);
 	            	context.order.entity = customerId;
-	            	//return customerId;
+	            	return customerId;
 	            }
 	            
-				var recordId = createRecord(context.order);
+				//var recordId = createRecord(context.order);
 	            var returnString = 'Customer Id: ' + customerId + ' recordId: ' + recordId;
 	            return returnString;
  			}
