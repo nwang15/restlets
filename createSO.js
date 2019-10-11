@@ -29,12 +29,31 @@
             	findAddressInCustomer(internalid,context.addressbook);
             }
             
-
 	 		return internalid;
  		}
-
+ 		//get item internal id
  		function getItemId(context){
+ 			var columns = ['internalid','entityid','email','category','pricelevel','isperson'];
+ 			var itemSearch = search.create({
+ 				type:search.Type.ITEM,
+ 				title:'Find item id',
+ 				columns:columns,
+ 				filters:[['description','contains',province]]
+ 			});
 
+ 			var results = itemSearch.run().getRange({start: 0, end: 1000});
+ 			log.debug ({
+                title: 'Finding items',
+                details: results.length
+            });
+
+            var internalid = searchResults(results,columns);
+            log.debug ({
+                title: 'item id',
+                details: internalid
+            });
+
+            return internalid;
  		}
  		//check if address exists in customer if not add it
  		function findAddressInCustomer(internalid,addressData){
@@ -47,19 +66,7 @@
 			      "AND", 
 			      ["internalid","is",internalid]
 			   ],
-			   columns:
-			   [
-			      search.createColumn({
-			         name: "entityid",
-			         sort: search.Sort.ASC
-			      }),
-			      "email",
-			      search.createColumn({
-			         name: "address1",
-			         join: "Address"
-			      }),
-			      "internalid"
-			   ]
+			   columns:columns
 			});
  			var results = customerSearchObj.run().getRange({start: 0, end: 1000});
  			var resultLength = results.length;
@@ -202,12 +209,6 @@
 				    })
 		        }
 				
-				/*
-				addressSubrecord.setValue({
-			        fieldId: 'addr1',
-			        value: addressData.addr1
-			    });
-				*/
 			    rec.commitLine({
 			       sublistId: 'addressbook'
 			    });
