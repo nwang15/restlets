@@ -31,29 +31,46 @@
             
 	 		return internalid;
  		}
- 		//get item internal id
- 		function getItemId(context){
- 			var columns = ['internalid','entityid','email','category','pricelevel','isperson'];
- 			var itemSearch = search.create({
- 				type:search.Type.ITEM,
- 				title:'Find item id',
- 				columns:columns,
- 				filters:[['description','contains',province]]
- 			});
+ 		//get item internal id need to get tax code ahead of order
+ 		function getItemIds(items,taxcode){
+ 			try{
+ 				var columns = ['internalid','name','displayname','internalid'];
+	 			var newItems = [];
+	 			for(var i = 0;i < items.length;i++){
+	 				var itemSearch = search.create({
+		 				type:search.Type.ITEM,
+		 				title:'Find item id',
+		 				columns:columns,
+		 				filters:[['name','is',items[i].item]]
+		 			});
 
- 			var results = itemSearch.run().getRange({start: 0, end: 1000});
- 			log.debug ({
-                title: 'Finding items',
-                details: results.length
-            });
+		 			var results = itemSearch.run().getRange({start: 0, end: 1000});
+		 			log.debug ({
+		                title: 'Finding items',
+		                details: results.length
+		            });
 
-            var internalid = searchResults(results,columns);
-            log.debug ({
-                title: 'item id',
-                details: internalid
-            });
+		            var internalid = searchResults(results,columns);
+		            log.debug ({
+		                title: 'item id',
+		                details: internalid
+		            });
+		            newItems.push({
+		            	item:internalid,
+		            	quantity:items[i].quantity,
+		            	taxcode:items[i].taxcode
+		            })
+	 			}
 
-            return internalid;
+	            return newItems;
+ 			}
+ 			catch(err){
+ 				log.error({
+					title:err.name + ' error getting item ids',
+					details:err
+				});
+ 			}
+ 			
  		}
  		//check if address exists in customer if not add it
  		function findAddressInCustomer(internalid,addressData){
@@ -280,18 +297,23 @@
 		            });
 	            	context.order.entity = customerId;
 	            }
-
 	            else{
 	            	log.debug ({
 		                title: 'Customer does not exist',
 		                details: customerId
 		            });
-	            	customerId = createRecord(context.customer,true);
+	            	//customerId = createRecord(context.customer,true);
 	            	context.order.entity = customerId;
 	            	//return customerId;
 	            }
-	            
-				var recordId = createRecord(context.order,false);
+
+	            var newItems = getItemIds(context.order.items);
+	            log.debug ({
+	                title: 'New Items',
+	                details: newItems
+	            });
+
+				//var recordId = createRecord(context.order,false);
 	            var returnString = 'Customer Id: ' + customerId + ' recordId: ' + recordId;
 	            return returnString;
  			}
