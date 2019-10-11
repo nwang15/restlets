@@ -302,18 +302,18 @@
 		                title: 'Customer does not exist',
 		                details: customerId
 		            });
-	            	//customerId = createRecord(context.customer,true);
+	            	customerId = createRecord(context.customer,true);
 	            	context.order.entity = customerId;
 	            	//return customerId;
 	            }
 
-	            var newItems = getItemIds(context.order.items);
+	            context.order.items = getItemIds(context.order.items);
 	            log.debug ({
 	                title: 'New Items',
-	                details: newItems
+	                details: context.order.items
 	            });
 
-				//var recordId = createRecord(context.order,false);
+				var recordId = createRecord(context.order,false);
 	            var returnString = 'Customer Id: ' + customerId + ' recordId: ' + recordId;
 	            return returnString;
  			}
