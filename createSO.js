@@ -58,7 +58,7 @@
 		            newItems.push({
 		            	item:internalid,
 		            	quantity:items[i].quantity,
-		            	taxcode:items[i].taxcode
+		            	taxcode:taxcode
 		            })
 	 			}
 
@@ -289,7 +289,7 @@
 	                title: 'Create data',
 	                details: context
 	            });
- 				getTax(context.order.extraData.taxProvince);
+ 				var taxcode = getTax(context.order.extraData.taxProvince);
  				if(customerId){
  					log.debug ({
 		                title: 'Customer exists',
@@ -307,7 +307,7 @@
 	            	//return customerId;
 	            }
 
-	            context.order.items = getItemIds(context.order.items);
+	            context.order.items = getItemIds(context.order.items,taxcode);
 	            log.debug ({
 	                title: 'New Items',
 	                details: context.order.items
