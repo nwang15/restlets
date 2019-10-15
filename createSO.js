@@ -31,7 +31,7 @@
             
 	 		return internalid;
  		}
- 		//get item internal id need to get tax code ahead of order
+ 		//get item internal id
  		function getItemIds(items,taxcode){
  			try{
  				var columns = ['internalid','name','displayname','internalid'];
@@ -113,7 +113,7 @@
  			}
 
  		}
-
+ 		//get tax internal id
  		function getTax(province){
  			var columns = ['itemid','internalid','state','country'];
  			var taxSearch = search.create({
@@ -133,8 +133,30 @@
 
 	 		return internalid;
  		}
+ 		//get shipping internalId
+ 		function getShipping(shipString){
+ 			var columns = ['itemid','description','internalid'];
+ 			var taxSearch = search.create({
+ 				type:'shipitem',
+ 				title:'Find shipping',
+ 				columns:columns,
+ 				filters:[['description','contains',shipString]]
+ 			});
+
+ 			var results = taxSearch.run().getRange({start: 0, end: 1000});
+ 			log.debug ({
+                title: 'Finding Shipping results',
+                details: results.length
+            });
+
+            var internalid = searchResults(results,columns);
+
+	 		return internalid;
+ 		}
+
  		//search for internalId in results use first result
  		function searchResults(results,columns){
+
  			if(results.length  > 0){
  				
  				var data = '';
@@ -308,6 +330,21 @@
 	            }
 
 	            context.order.items = getItemIds(context.order.items,taxcode);
+	            //pass in shopify code
+	            var shipMethod = getShipping(context.order.shipmethod);
+	            if(shipMethod){
+	            	context.order.shipmethod = shipMethod;
+	            }
+	            //set to blank to still create order on NS
+	            //if ship method blank on NS then need to create ship method
+	            else{
+	            	log.debug ({
+		                title: 'Shipping Method cannot be found',
+		                details: context.order.shipmethod
+		            });
+	            	context.order.shipmethod = "";
+	            	context.order.shippingcost = "";
+	            }
 	            log.debug ({
 	                title: 'New Items',
 	                details: context.order.items
