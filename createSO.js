@@ -58,7 +58,9 @@
 		            newItems.push({
 		            	item:internalid,
 		            	quantity:items[i].quantity,
-		            	taxcode:taxcode
+		            	taxcode:taxcode,
+		            	price:items[i].price,
+		            	rate:items[i].rate
 		            })
 	 			}
 
