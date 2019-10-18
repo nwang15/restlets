@@ -109,7 +109,8 @@
 				    isDynamic: true,
 				});
 
- 				createAddress(addressData,rec);
+				 createAddress(addressData,rec);
+				 setCustomerDefaults(rec);
 
 				rec.save();
  			}
@@ -131,10 +132,17 @@
                 details: results.length
             });
 
-            var internalid = searchResults(results,columns);
-
+			var internalid = searchResults(results,columns);
+			//handle outside canada
+			if(!internalid){
+				internalid = 4288;
+			}
+			log.debug ({
+                title: 'Tax result',
+                details: internalid
+            });
 	 		return internalid;
- 		}
+		 }
  		//get shipping internalId
  		function getShipping(shipString){
  			var columns = ['itemid','description','internalid'];
@@ -231,7 +239,29 @@
 				});
  			}
  			
- 		}
+		}
+		//set category and price level if empty, default to retail and online price
+		function setCustomerDefaults(rec){
+			 var category = rec.getValue({
+				fieldId: 'category'
+			 });
+			 var pricelevel = rec.getValue({
+				 fieldId:'pricelevel'
+			 });
+
+			 if(!category){
+				 rec.setValue('category',2);
+			 }
+			 if(!pricelevel){
+				rec.setValue('pricelevel',5);
+			 }
+
+			 log.debug ({
+				title: 'Customer cat/price',
+				details: category + '|' + pricelevel
+			});
+
+		}
  		//this function needs to exist to handle the dynamic mode for customer records
  		function createAddress(addressData,rec){
  			try{
