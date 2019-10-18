@@ -361,7 +361,9 @@
 	            	//return customerId;
 	            }
 
-	            context.order.items = getItemIds(context.order.items,taxcode);
+				context.order.items = getItemIds(context.order.items,taxcode);
+				context.order.shippingtaxcode = taxcode;
+				context.order.handlingtaxcode = taxcode;
 	            //pass in shopify code
 	            var shipMethod = getShipping(context.order.shipmethod);
 	            if(shipMethod){
