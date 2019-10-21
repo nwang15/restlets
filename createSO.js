@@ -333,7 +333,6 @@
 
 				for (var fldName in context) {
 					if(context.hasOwnProperty(fldName)){
-                      
 						if(fldName !== 'recordtype' && fldName !== 'items' && fldName !== 'extraData' && fldName !== 'addressbook' && fldName !== 'shippingaddress' && fldName !== 'billingaddress'){
 							rec.setValue(fldName,context[fldName]);
 						}
@@ -347,6 +346,7 @@
 							createAddressSO(fldName,context[fldName],rec);
 						}
 						else if(fldName === 'billingaddress'){
+							
 							createAddressSO(fldName,context[fldName],rec);
 						}
 
