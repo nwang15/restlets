@@ -291,7 +291,35 @@
 				});
  			}
  			
- 		}
+		 }
+		 //add shipping and billing address to SO
+		 function createAddressSO(addressType,addressData,rec){
+			try{
+				log.debug ({
+					title: 'Create Address SO',
+					details: addressType
+				});
+
+				var addressSubrecord = rec.getSubrecord({
+				   fieldId: addressType
+			   });
+			   
+			   for(var addressField in addressData){
+				   addressSubrecord.setValue({
+					   fieldId: addressField,
+					   value: addressData[addressField]
+				   })
+			   }
+
+			}
+			catch(err){
+				log.error({
+				   title:err.name + ' error creating address ',
+				   details:err.message
+			   });
+			}
+			
+		}
 
  		function createRecord(context,dynamic){
  			try{
@@ -306,7 +334,7 @@
 				for (var fldName in context) {
 					if(context.hasOwnProperty(fldName)){
                       
-						if(fldName !== 'recordtype' && fldName !== 'items' && fldName !== 'extraData' && fldName !== 'addressbook'){
+						if(fldName !== 'recordtype' && fldName !== 'items' && fldName !== 'extraData' && fldName !== 'addressbook' && fldName !== 'shippingaddress' && fldName !== 'billingaddress'){
 							rec.setValue(fldName,context[fldName]);
 						}
 						else if(fldName === 'items'){
@@ -314,6 +342,12 @@
 						}
 						else if(fldName === 'addressbook'){
 							createAddress(context[fldName],rec);
+						}
+						else if(fldName === 'shippingaddress'){
+							createAddressSO(fldName,context[fldName],rec);
+						}
+						else if(fldName === 'billingaddress'){
+							createAddressSO(fldName,context[fldName],rec);
 						}
 
 					}
@@ -324,7 +358,7 @@
  			catch(err){
  				log.error({
 					title:err.name + ' error creating ' + context.recordtype,
-					details:err.message
+					details:err
 				});
  			}
  			
