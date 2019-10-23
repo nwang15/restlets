@@ -6,12 +6,13 @@
  define(['N/record','N/search'],function(record,search){
  		//find customer by email then return netsuite id
  		function checkForCustomer(context){
-            var columns = ['internalid','entityid','email','category','pricelevel','isperson'];
+			var columns = ['internalid','entityid','email','category','pricelevel','isperson'];
+			var entityName = context.firstname + ' ' + context.lastname;
  			var customerSearch = search.create({
  				type:search.Type.CUSTOMER,
  				title:'Find duplicate customer',
  				columns:columns,
- 				filters:[['email','is',context.email]]
+ 				filters:[['email','is',context.email],'OR',['entityid','is',entityName]]
  			});
 
  			var results = customerSearch.run().getRange({start: 0, end: 1000});
