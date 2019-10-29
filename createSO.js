@@ -51,7 +51,7 @@
 		                details: results.length
 		            });
 
-		            var internalid = searchResults(results,columns);
+		            var internalid = searchResults(results,columns,items[i].item,'name');
 		            log.debug ({
 		                title: 'item id',
 		                details: internalid
@@ -163,17 +163,38 @@
             var internalid = searchResults(results,columns);
 
 	 		return internalid;
- 		}
+		 }
+		 
+		function filterResults(results,filterBy,filterColumn){
+			for(var i = 0;i < results.length;i++){
+				var columnData = results[i].getValue({
+					name:filterColumn
+				});
+				log.debug ({
+					title: 'Filter Results Item and shopify item',
+					details: columnData + '|' + filterBy
+				});
+				if(columnData === filterBy){
+					return i;
+				}
+			}
+
+			return 0;
+		}
 
  		//search for internalId in results use first result
- 		function searchResults(results,columns){
+ 		function searchResults(results,columns,filterBy,filterColumn){
+			var resultIndex = 0;
+			if(filterBy && filterColumn){
+				resultIndex = filterResults(results,filterBy,filterColumn);
+			}
 
  			if(results.length  > 0){
  				
  				var data = '';
  				var internalid;
 				for (var k = 0; k < columns.length; k++) {
-					var columnData = results[0].getValue({
+					var columnData = results[resultIndex].getValue({
 	            		name:columns[k]
 	            	});
 
