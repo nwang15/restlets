@@ -5,6 +5,18 @@
 
 define(['N/record','N/search','N/encode','./shopify-calls.js','./k-p.js'],function(record,search,encode,shopify,keys){
 
+    function searchProducts(productData){
+        var nsData = [];
+        for(var i = 0;i < productData.length;i++){
+            var itemSearch = search.create({
+                type:search.Type.ITEM,
+                title:'Find item id',
+                columns:columns,
+                filters:[['name','is',productData[i].item]]
+            });
+        }
+    }
+
     function updateInventory(context){
         log.debug ({
             title: 'get inventory data',
@@ -26,11 +38,11 @@ define(['N/record','N/search','N/encode','./shopify-calls.js','./k-p.js'],functi
             }
         };
 
-        var productdata = shopify.getAllProductsSync(options)
+        var productdata = shopify.getAllProductsSync(options,['id','variants'])
         try{               
             log.debug ({
                 title: 'Product Data',
-                details: productdata
+                details: productdata.length
             });
 
             return 'Done getting inventory';
