@@ -4,7 +4,7 @@
  */
 
 define(['N/record','N/search','N/encode','./shopify-calls.js','./k-p.js'],function(record,search,encode,shopify,keys){
-
+    //find correct item if multiple results
     function filterResults(results,filterBy,filterColumn){
         for(var i = 0;i < results.length;i++){
             var columnData = results[i].getValue({
@@ -153,7 +153,51 @@ define(['N/record','N/search','N/encode','./shopify-calls.js','./k-p.js'],functi
 
     }
 
+    function findProduct(itemCode){
+        var nsData = [];
+        var columns = ['name','quantityonhand'];
+
+        var itemSearch = search.create({
+            type:search.Type.ITEM,
+            title:'Find item id',
+            columns:columns,
+            filters:[['name','is',itemCode]]
+        });
+        var results = itemSearch.run().getRange({start: 0, end: 1000});
+        log.debug ({
+            title: 'Finding items | ' + itemCode + '|' + i,
+            details: results.length
+        });
+
+        var itemQuantity = searchResults(results,columns,itemCode,'name','quantityonhand');
+
+        return itemQuantity;
+    }
+
+    function getSingleProduct(context){
+        try{
+            log.debug ({
+                title: 'Item data',
+                details: context
+            });
+    
+            var itemQuantity = findProduct(context.item);
+    
+            return itemQuantity;
+        }
+        catch (err){
+            log.debug ({
+                title: 'Error: ',
+                details: err
+            });
+
+            return 'Error occured';
+        }
+        
+    }
+
     return{
-        get:updateInventory
+        get:updateInventory,
+        post:getSingleProduct
     };
 });
