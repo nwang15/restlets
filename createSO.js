@@ -12,7 +12,7 @@
  				type:search.Type.CUSTOMER,
  				title:'Find duplicate customer',
  				columns:columns,
- 				filters:[['email','is',context.email],'OR',['entityid','is',entityName]]
+ 				filters:[['email','is',context.email],'AND',['entityid','is',entityName]]
  			});
 
  			var results = customerSearch.run().getRange({start: 0, end: 1000});
@@ -343,7 +343,7 @@
 			
 		}
 
- 		function createRecord(context,dynamic){
+ 		function createRecord(context,dynamic,counter){
  			try{
  				if(dynamic === undefined){
  					dynamic = false;
@@ -378,6 +378,25 @@
 	            return String(recordId);
  			}
  			catch(err){
+				//catch error creating customer, error possible now due to AND in search
+				//continually try creating record until it works
+				if(err.name === "UNIQUE_CUST_ID_REQD"){
+					if(!counter){
+						counter = 1;
+					}
+					var lastChar = context.lastname.slice(context.lastname.length - 1);
+					var lastname = context.lastname;
+					if(!isNaN(lastChar)){
+						lastname = context.lastname.slice(0,context.lastname.length - 1);
+						lastname += counter;
+						context.lastname = lastname;
+					}
+					else{
+						context.lastname += counter;
+					}
+					
+					return createRecord(context,dynamic,counter + 1);
+				}
  				log.error({
 					title:err.name + ' error creating ' + context.recordtype,
 					details:err
